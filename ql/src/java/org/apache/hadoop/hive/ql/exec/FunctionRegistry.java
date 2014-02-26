@@ -208,6 +208,12 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDTFExplode;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTFJSONTuple;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTFParseUrlTuple;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTFStack;
+
+import org.apache.hadoop.hive.ql.udf.UDFCleanExport;
+import org.apache.hadoop.hive.ql.udf.approx_clean.ApproxUDAFAverageClean;
+import org.apache.hadoop.hive.ql.udf.approx_clean.ApproxUDAFSumClean;
+import org.apache.hadoop.hive.ql.udf.approx_clean.ApproxUDAFCountClean;
+
 import org.apache.hadoop.hive.ql.udf.generic.SimpleGenericUDAFParameterInfo;
 import org.apache.hadoop.hive.ql.udf.xml.GenericUDFXPath;
 import org.apache.hadoop.hive.ql.udf.xml.UDFXPathBoolean;
@@ -243,6 +249,12 @@ public final class FunctionRegistry {
    */
   static Map<String, FunctionInfo> mFunctions = new LinkedHashMap<String, FunctionInfo>();
   static {
+
+    registerGenericUDTF("clean_export", UDFCleanExport.class);
+    registerGenericUDAF("approx_count_clean", new ApproxUDAFCountClean());
+    registerGenericUDAF("approx_sum_clean", new ApproxUDAFSumClean());
+    registerGenericUDAF("approx_avg_clean", new ApproxUDAFAverageClean());
+
     registerUDF("concat", UDFConcat.class, false);
     registerUDF("substr", UDFSubstr.class, false);
     registerUDF("substring", UDFSubstr.class, false);

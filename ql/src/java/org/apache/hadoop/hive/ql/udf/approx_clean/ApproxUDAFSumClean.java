@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hadoop.hive.ql.udf.approx;
+package org.apache.hadoop.hive.ql.udf.approx_clean;
 
 import java.util.ArrayList;
 
@@ -49,14 +49,14 @@ import org.apache.hadoop.util.StringUtils;
  *
  */
 @Description(name = "approx_sum", value = "_FUNC_(x) - Returns the approximate sum of a set of numbers with error bars")
-public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
+public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
 
-  static final Log LOG = LogFactory.getLog(ApproxUDAFSum.class.getName());
+  static final Log LOG = LogFactory.getLog(ApproxUDAFSumClean.class.getName());
 
   @Override
   public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
       throws SemanticException {
-    if (parameters.length != 3) {
+    if (parameters.length != 4) {
       throw new UDFArgumentTypeException(parameters.length - 1,
           "Exactly one argument is expected.");
     }
@@ -73,13 +73,13 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
     case INT:
     case LONG:
 
-      return new ApproxUDAFSumLong();
+      return new ApproxUDAFSumCleanLong();
     case FLOAT:
+    case STRING:
     case DOUBLE:
-      return new ApproxUDAFSumDouble();
+      return new ApproxUDAFSumCleanDouble();
     case DATE:
     case TIMESTAMP:
-    case STRING:
     case BOOLEAN:
     default:
       throw new UDFArgumentTypeException(0,
@@ -89,10 +89,10 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
   }
 
   /**
-   * ApproxUDAFSumDouble.
+   * ApproxUDAFSumCleanDouble.
    *
    */
-  public static class ApproxUDAFSumDouble extends GenericUDAFEvaluator {
+  public static class ApproxUDAFSumCleanDouble extends GenericUDAFEvaluator {
     // private PrimitiveObjectInspector inputOI;
     // private DoubleWritable result;
 
@@ -122,12 +122,12 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
 
     @Override
     public ObjectInspector init(Mode m, ObjectInspector[] parameters) throws HiveException {
-      assert (parameters.length == 3);
+      assert (parameters.length == 4);
       super.init(m, parameters);
 
-      if (parameters.length == 3) {
-        totalRowsOI = (PrimitiveObjectInspector) parameters[2];
-        sampleRowsOI = (PrimitiveObjectInspector) parameters[1];
+      if (parameters.length == 4) {
+        totalRowsOI = (PrimitiveObjectInspector) parameters[3];
+        sampleRowsOI = (PrimitiveObjectInspector) parameters[2];
       }
 
       // result = new DoubleWritable(0);
@@ -229,24 +229,26 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
 
     @Override
     public void iterate(AggregationBuffer agg, Object[] parameters) throws HiveException {
-      assert (parameters.length == 3);
+      assert (parameters.length == 4);
 
-      if (parameters.length == 3) {
-        ((SumDoubleAgg) agg).totalRows = PrimitiveObjectInspectorUtils.getLong(parameters[2],
+      if (parameters.length == 4) {
+        ((SumDoubleAgg) agg).totalRows = PrimitiveObjectInspectorUtils.getLong(parameters[3],
             totalRowsOI);
-        ((SumDoubleAgg) agg).sampleRows = PrimitiveObjectInspectorUtils.getLong(parameters[1],
+        ((SumDoubleAgg) agg).sampleRows = PrimitiveObjectInspectorUtils.getLong(parameters[2],
             sampleRowsOI);
       }
 
       Object p = parameters[0];
+      Object d = parameters[1];
       if (p != null) {
         SumDoubleAgg myagg = (SumDoubleAgg) agg;
         try {
           double v = PrimitiveObjectInspectorUtils.getDouble(p, inputOI);
+          double dv = PrimitiveObjectInspectorUtils.getDouble(d, inputOI);
           myagg.count++;
-          myagg.sum += v;
+          myagg.sum += v/dv;
           if (myagg.count > 1) {
-            double t = myagg.count * v - myagg.sum;
+            double t = myagg.count * v/dv - myagg.sum;
             myagg.variance += (t * t) / ((double) myagg.count * (myagg.count - 1));
           }
         } catch (NumberFormatException e) {
@@ -328,9 +330,8 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
       if (myagg.empty) {
         return null;
       }
-
-      double approx_sum = ((double) myagg.sum * myagg.totalRows) / myagg.sampleRows;
-      double probability = ((double) myagg.count) / ((double) myagg.totalRows);
+        double approx_sum = ((double) myagg.sum * myagg.totalRows) / myagg.sampleRows;
+      double probability = ((double) myagg.count) / ((double) myagg.sampleRows);
       double mean = myagg.sum / myagg.count;
 
       LOG.info("Sum: " + approx_sum);
@@ -341,10 +342,10 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
       StringBuilder sb = new StringBuilder();
       sb.append(approx_sum);
       sb.append(" +/- ");
-      sb.append(Math.ceil((2.575 * (1.0 * myagg.totalRows / myagg.sampleRows) * Math
+      sb.append(Math.ceil((1.96 * (1.0 * myagg.totalRows / myagg.sampleRows) * Math
           .sqrt(probability
               * ((myagg.variance) + ((1 - probability) * myagg.totalRows * mean * mean))))));
-      sb.append(" (99% Confidence) ");
+      sb.append(" (95% Confidence Clean) ");
 
       result.set(sb.toString());
       return result;
@@ -357,7 +358,7 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
    * GenericUDAFSumLong.
    *
    */
-  public static class ApproxUDAFSumLong extends GenericUDAFEvaluator {
+  public static class ApproxUDAFSumCleanLong extends GenericUDAFEvaluator {
     // private PrimitiveObjectInspector inputOI;
     // private LongWritable result;
 
@@ -388,12 +389,12 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
 
     @Override
     public ObjectInspector init(Mode m, ObjectInspector[] parameters) throws HiveException {
-      assert (parameters.length == 3);
+      assert (parameters.length == 4);
       super.init(m, parameters);
 
-      if (parameters.length == 3) {
-        totalRowsOI = (PrimitiveObjectInspector) parameters[2];
-        sampleRowsOI = (PrimitiveObjectInspector) parameters[1];
+      if (parameters.length == 4) {
+        totalRowsOI = (PrimitiveObjectInspector) parameters[3];
+        sampleRowsOI = (PrimitiveObjectInspector) parameters[2];
       }
 
       // init input
@@ -491,25 +492,27 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
 
     @Override
     public void iterate(AggregationBuffer agg, Object[] parameters) throws HiveException {
-      assert (parameters.length == 3);
+      assert (parameters.length == 4);
 
       Object p = parameters[0];
+      Object d = parameters[1];
       if (p != null) {
         SumLongAgg myagg = (SumLongAgg) agg;
 
-        if (parameters.length == 3) {
-          myagg.totalRows = PrimitiveObjectInspectorUtils.getLong(parameters[2],
+        if (parameters.length == 4) {
+          myagg.totalRows = PrimitiveObjectInspectorUtils.getLong(parameters[3],
               totalRowsOI);
-          myagg.sampleRows = PrimitiveObjectInspectorUtils.getLong(parameters[1],
+          myagg.sampleRows = PrimitiveObjectInspectorUtils.getLong(parameters[2],
               sampleRowsOI);
         }
 
         try {
           long v = PrimitiveObjectInspectorUtils.getLong(p, inputOI);
+          double dv = PrimitiveObjectInspectorUtils.getDouble(d, inputOI);
           myagg.count++;
-          myagg.sum += v;
+          myagg.sum += v/dv;
           if (myagg.count > 1) {
-            double t = myagg.count * v - myagg.sum;
+            double t = myagg.count * v/dv - myagg.sum;
             myagg.variance += (t * t) / ((double) myagg.count * (myagg.count - 1));
           }
         } catch (NumberFormatException e) {
@@ -602,10 +605,10 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
       StringBuilder sb = new StringBuilder();
       sb.append(approx_sum);
       sb.append(" +/- ");
-      sb.append(Math.ceil((2.575 * (1.0 * myagg.totalRows / myagg.sampleRows) * Math
+      sb.append(Math.ceil((1.96 * (1.0 * myagg.totalRows / myagg.sampleRows) * Math
           .sqrt(probability
               * ((myagg.variance) + ((1 - probability) * myagg.totalRows * mean * mean))))));
-      sb.append(" (99% Confidence) ");
+      sb.append(" (95% Confidence Clean) ");
 
       result.set(sb.toString());
       return result;
@@ -615,3 +618,4 @@ public class ApproxUDAFSum extends AbstractGenericUDAFResolver {
   }
 
 }
+

@@ -33,10 +33,14 @@ public class SampleCleanRewriter {
     private static final String CREATE_COMMAND = "create";
     private static final String MERGE_COMMAND = "merge";
 
+    private static final String RAWSC = "rawsc";
+    private static final String NORMALIZEDSC = "normalizedsc";
+
     //HQL syntax
     private static final String HIVEQL_LOAD_TABLE = "LOAD DATA LOCAL INPATH";
     private static final String HIVEQL_CREATE_TABLE = "CREATE TABLE";
     private static final String HIVEQL_TABLE_STORAGE_DEFAULT = "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' AS SELECT t.* FROM";
+    private static final String HIVEQL_JOIN_TABLE = "RIGHT OUTER JOIN";
     private static final String HIVEQL_SAMPLECLEAN_UDF = "clean_export";
     private static final String HIVEQL_HASH_COL_NAME = "hash";
     private static final String HIVEQL_DUP_COL_NAME = "dup";
@@ -51,7 +55,7 @@ public class SampleCleanRewriter {
     /*
     @param defaultOutFile Default output file typically in HDFS
     @param defaultInFile Default in file typically on the driver
-    @param scMode "RawSC" or "Both", read our paper to figure out which one you should use.
+    @param scMode "RawSC" or "NormalizedSC", read our paper to figure out which one you should use.
      */
     public SampleCleanRewriter(String defaultOutFile, String defaultInFile, String scMode)
     {
@@ -78,8 +82,14 @@ public class SampleCleanRewriter {
             return dirtyViewRewrite(command);
         else if (command.toLowerCase().startsWith(MERGE_COMMAND))
             return mergeViewRewrite(command);
-        else
+        else if (scMode.equalsIgnoreCase(RAWSC))
             return queryRewrite(command);
+        else if (scMode.equalsIgnoreCase(NORMALIZEDSCSC))
+            return correctionQueryRewrite(command);
+        else
+            throw new SampleCleanSyntaxException("SampleClean: Illegal Operating Mode!");
+
+        return commandList;
     }
 
     private ArrayList<String> mergeViewRewrite(String command) throws SampleCleanSyntaxException
@@ -146,7 +156,7 @@ public class SampleCleanRewriter {
     }
 
     /*
-    Re-writes blinkdb syntax into sample clean syntax.
+    Re-writes blinkdb syntax into sample clean syntax RawSC.
      */
     private ArrayList<String> queryRewrite(String command) throws SampleCleanSyntaxException
     {
@@ -189,6 +199,66 @@ public class SampleCleanRewriter {
         commandList.add(cleanhqlCommand);
 
         return commandList;
+    }
+
+    /*
+   Re-writes blinkdb syntax into sample clean syntax NormalizedSC.
+    */
+    private ArrayList<String> correctionQueryRewrite(String command) throws SampleCleanSyntaxException
+    {
+        Scanner queryScanner = new Scanner(command);
+        ArrayList<String> commandList = new ArrayList<String>();
+        String hqlCommand = command.replaceAll(" "+ CLEAN_COMMAND+ " "," DISTINCT ") + " ";
+
+        while(queryScanner.hasNext())
+        {
+            String currentToken = queryScanner.next().toLowerCase();
+
+            if (currentToken.equals("from"))
+                break;
+        }
+
+        String viewName = queryScanner.next();
+        String cleanhqlCommand = hqlCommand.replaceAll(viewName, viewName + "_clean") + " " + HIVEQL_JOIN_TABLE + " " + viewName + "_dirty";
+        cleanhqlCommand += " ON (" + viewName + "_clean.hash=" + viewName + "_dirty.hash)";
+
+        int firstIndexOfApprox = cleanhqlCommand.indexOf("approx_sum");
+        if(firstIndexOfApprox != -1)
+        {
+            ArrayList<String> argReplacement = correctionArg(cleanhqlCommand.substring(firstIndexOfApprox), viewName);
+            cleanhqlCommand = cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",",dup)");
+            cleanhqlCommand = cleanhqlCommand.replaceAll("approx_sum","approx_sum_clean");
+        }
+
+        firstIndexOfApprox = cleanhqlCommand.indexOf("approx_avg");
+        if(firstIndexOfApprox != -1)
+        {
+            ArrayList<String> argReplacement = correctionArg(cleanhqlCommand.substring(firstIndexOfApprox),viewName);
+            cleanhqlCommand = cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",",dup)");
+            cleanhqlCommand = cleanhqlCommand.replaceAll("approx_avg","approx_avg_clean");
+        }
+
+        firstIndexOfApprox = cleanhqlCommand.indexOf("approx_count");
+        if(firstIndexOfApprox != -1)
+        {
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",",dup)");
+            cleanhqlCommand = cleanhqlCommand.replaceAll("approx_count","approx_count_clean");
+        }
+
+        commandList.add(cleanhqlCommand);
+
+        return commandList;
+    }
+
+    private ArrayList<String> correctionArg(String argSubString,String viewName)
+    {
+        ArrayList<String> rtnString = new ArrayList<String>();
+        String argument = argSubString.substring(argSubString.indexOf("(")+1,argSubString.indexOf(")")).trim();
+        rtnString.add(argument);
+        rtnString.add(viewName + "_dirty." + argument + " - " + viewName + "_clean." + argument );
+        return rtnString;
     }
 
     /* Tests whether the merge query is prefaced with the right syntax

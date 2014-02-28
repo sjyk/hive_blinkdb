@@ -84,12 +84,10 @@ public class SampleCleanRewriter {
             return mergeViewRewrite(command);
         else if (scMode.equalsIgnoreCase(RAWSC))
             return queryRewrite(command);
-        else if (scMode.equalsIgnoreCase(NORMALIZEDSCSC))
+        else if (scMode.equalsIgnoreCase(NORMALIZEDSC))
             return correctionQueryRewrite(command);
         else
             throw new SampleCleanSyntaxException("SampleClean: Illegal Operating Mode!");
-
-        return commandList;
     }
 
     private ArrayList<String> mergeViewRewrite(String command) throws SampleCleanSyntaxException
@@ -208,7 +206,7 @@ public class SampleCleanRewriter {
     {
         Scanner queryScanner = new Scanner(command);
         ArrayList<String> commandList = new ArrayList<String>();
-        String hqlCommand = command.replaceAll(" "+ CLEAN_COMMAND+ " "," DISTINCT ") + " ";
+        String hqlCommand = command.replaceAll(" "+ CLEAN_COMMAND+ " "," ") + " ";
 
         while(queryScanner.hasNext())
         {
@@ -226,8 +224,10 @@ public class SampleCleanRewriter {
         if(firstIndexOfApprox != -1)
         {
             ArrayList<String> argReplacement = correctionArg(cleanhqlCommand.substring(firstIndexOfApprox), viewName);
-            cleanhqlCommand = cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
-            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",",dup)");
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) +  cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
+
+            firstIndexOfApprox = cleanhqlCommand.indexOf("approx_sum");
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",","+viewName+"_clean.dup)");
             cleanhqlCommand = cleanhqlCommand.replaceAll("approx_sum","approx_sum_clean");
         }
 
@@ -235,15 +235,17 @@ public class SampleCleanRewriter {
         if(firstIndexOfApprox != -1)
         {
             ArrayList<String> argReplacement = correctionArg(cleanhqlCommand.substring(firstIndexOfApprox),viewName);
-            cleanhqlCommand = cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
-            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",",dup)");
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
+
+            firstIndexOfApprox = cleanhqlCommand.indexOf("approx_avg");
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",","+viewName+"_clean.dup)");
             cleanhqlCommand = cleanhqlCommand.replaceAll("approx_avg","approx_avg_clean");
         }
 
         firstIndexOfApprox = cleanhqlCommand.indexOf("approx_count");
         if(firstIndexOfApprox != -1)
         {
-            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",",dup)");
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",","+viewName+"_clean.dup)");
             cleanhqlCommand = cleanhqlCommand.replaceAll("approx_count","approx_count_clean");
         }
 

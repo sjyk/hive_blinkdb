@@ -92,6 +92,7 @@ public class ApproxUDAFAverageClean extends AbstractGenericUDAFResolver {
 
     // For PARTIAL1 and COMPLETE
     private PrimitiveObjectInspector inputOI;
+    private PrimitiveObjectInspector dupOI;
 
     // For PARTIAL2 and FINAL
     private StructObjectInspector soi;
@@ -117,6 +118,7 @@ public class ApproxUDAFAverageClean extends AbstractGenericUDAFResolver {
       // init input
       if (mode == Mode.PARTIAL1 || mode == Mode.COMPLETE) {
         inputOI = (PrimitiveObjectInspector) parameters[0];
+        dupOI = (PrimitiveObjectInspector) parameters[1];
       } else {
         soi = (StructObjectInspector) parameters[0];
 
@@ -190,11 +192,11 @@ public class ApproxUDAFAverageClean extends AbstractGenericUDAFResolver {
       assert (parameters.length == 2);
       Object p = parameters[0];
       Object d = parameters[1];
-      if (p != null) {
+      if (p != null && d != null) {
         StdAgg myagg = (StdAgg) agg;
         try {
           double v = PrimitiveObjectInspectorUtils.getDouble(p, inputOI);
-          double dv = PrimitiveObjectInspectorUtils.getDouble(d, inputOI);
+          double dv = PrimitiveObjectInspectorUtils.getDouble(d, dupOI);
           myagg.count+=1.0/dv;
           myagg.sum += v/dv;
           if (myagg.count > 1) {

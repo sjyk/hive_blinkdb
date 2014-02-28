@@ -98,6 +98,7 @@ public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
 
     // For PARTIAL1 and COMPLETE
     private PrimitiveObjectInspector inputOI;
+    private PrimitiveObjectInspector dupOI;
     private PrimitiveObjectInspector totalRowsOI;
     private PrimitiveObjectInspector sampleRowsOI;
 
@@ -137,6 +138,7 @@ public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
       // init input
       if (mode == Mode.PARTIAL1 || mode == Mode.COMPLETE) {
         inputOI = (PrimitiveObjectInspector) parameters[0];
+        dupOI = (PrimitiveObjectInspector) parameters[1];
       } else {
         soi = (StructObjectInspector) parameters[0];
 
@@ -244,7 +246,7 @@ public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
         SumDoubleAgg myagg = (SumDoubleAgg) agg;
         try {
           double v = PrimitiveObjectInspectorUtils.getDouble(p, inputOI);
-          double dv = PrimitiveObjectInspectorUtils.getDouble(d, inputOI);
+          double dv = PrimitiveObjectInspectorUtils.getDouble(d, dupOI);
           myagg.count++;
           myagg.sum += v/dv;
           if (myagg.count > 1) {
@@ -364,6 +366,7 @@ public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
 
     // For PARTIAL1 and COMPLETE
     private PrimitiveObjectInspector inputOI;
+    private PrimitiveObjectInspector dupOI;
     private PrimitiveObjectInspector totalRowsOI;
     private PrimitiveObjectInspector sampleRowsOI;
 
@@ -400,6 +403,7 @@ public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
       // init input
       if (mode == Mode.PARTIAL1 || mode == Mode.COMPLETE) {
         inputOI = (PrimitiveObjectInspector) parameters[0];
+          dupOI = (PrimitiveObjectInspector) parameters[1];
       } else {
         soi = (StructObjectInspector) parameters[0];
 
@@ -508,7 +512,7 @@ public class ApproxUDAFSumClean extends AbstractGenericUDAFResolver {
 
         try {
           long v = PrimitiveObjectInspectorUtils.getLong(p, inputOI);
-          double dv = PrimitiveObjectInspectorUtils.getDouble(d, inputOI);
+          double dv = PrimitiveObjectInspectorUtils.getDouble(d, dupOI);
           myagg.count++;
           myagg.sum += v/dv;
           if (myagg.count > 1) {

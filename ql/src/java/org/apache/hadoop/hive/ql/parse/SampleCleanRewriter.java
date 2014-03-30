@@ -217,7 +217,7 @@ public class SampleCleanRewriter {
         }
 
         String viewName = queryScanner.next();
-        String cleanhqlCommand = hqlCommand.replaceAll(viewName, viewName + "_clean") + " " + HIVEQL_JOIN_TABLE + " " + viewName + "_dirty";
+        String cleanhqlCommand = hqlCommand.replaceAll(viewName, viewName + "_clean")+ " " + HIVEQL_JOIN_TABLE + " " + viewName + "_dirty";
         cleanhqlCommand += " ON (" + viewName + "_clean.hash=" + viewName + "_dirty.hash)";
 
         int firstIndexOfApprox = cleanhqlCommand.indexOf("approx_sum");
@@ -245,6 +245,10 @@ public class SampleCleanRewriter {
         firstIndexOfApprox = cleanhqlCommand.indexOf("approx_count");
         if(firstIndexOfApprox != -1)
         {
+            ArrayList<String> argReplacement = correctionArg(cleanhqlCommand.substring(firstIndexOfApprox),viewName);
+            cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst(argReplacement.get(0),argReplacement.get(1));
+
+            firstIndexOfApprox = cleanhqlCommand.indexOf("approx_count");
             cleanhqlCommand = cleanhqlCommand.substring(0,firstIndexOfApprox) + cleanhqlCommand.substring(firstIndexOfApprox).replaceFirst("\\)",","+viewName+"_clean.dup)");
             cleanhqlCommand = cleanhqlCommand.replaceAll("approx_count","approx_count_clean");
         }
@@ -260,6 +264,15 @@ public class SampleCleanRewriter {
         String argument = argSubString.substring(argSubString.indexOf("(")+1,argSubString.indexOf(")")).trim();
         rtnString.add(argument);
         rtnString.add(viewName + "_dirty." + argument + " - " + viewName + "_clean." + argument );
+        return rtnString;
+    }
+
+    private ArrayList<String> countCorrectionArg(String argSubString,String viewName)
+    {
+        ArrayList<String> rtnString = new ArrayList<String>();
+        String argument = argSubString.substring(argSubString.indexOf("(")+1,argSubString.indexOf(")")).trim();
+        rtnString.add(argument);
+        rtnString.add(viewName + "_clean." + argument );
         return rtnString;
     }
 

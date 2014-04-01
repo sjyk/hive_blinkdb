@@ -18,7 +18,7 @@ public class OutlierDetectRewriter {
     public static final String NORM = "z";
 
     private static final String MAD_QUERY = "SELECT %v.hash AS hash, ROUND(ABS(%v.%a - t.med)) AS z FROM %v JOIN (SELECT PERCENTILE(ROUND(%a),0.5) AS med FROM %v) t on TRUE";
-    private static final String NORM_QUERY = "SELECT %v.hash AS hash, ABS(src.key - t.mu)/t.sigma AS z FROM src JOIN (SELECT AVG(key) AS mu ,STD(key) AS sigma FROM src) t ON TRUE";
+    private static final String NORM_QUERY = "SELECT %v.hash AS hash, ABS(%v.key - t.mu)/t.sigma AS z FROM %v JOIN (SELECT AVG(%a) AS mu ,STD(%a) AS sigma FROM %v) t ON TRUE";
 
     private static final String NORM_THRESHOLD = "SELECT %p as thresh FROM %v_score LIMIT 1";
     private static final String MAD_THRESHOLD = "SELECT %p*PERCENTILE(z,0.5) as thresh FROM %v_score LIMIT 1";

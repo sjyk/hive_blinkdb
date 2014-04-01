@@ -155,12 +155,40 @@ public class SampleCleanRewriter {
                 initialTokens.get(2),
                 initialTokens.get(3)))
         {
+            String attr = "";
             if (!queryScanner.hasNext())
+            {
                 throw new SampleCleanSyntaxException("SampleClean: Specify an attribute with outlier");
+            }
+            attr = queryScanner.next();
 
-            commandList.add(ow.scoreQuery(initialTokens.get(3)+"_clean",queryScanner.next(),OutlierDetectRewriter.MAD));
-            commandList.add(ow.threshQuery(initialTokens.get(3)+"_clean","2.5",OutlierDetectRewriter.MAD));
-            commandList.add(ow.joinAndFilter(initialTokens.get(3)+"_clean"));
+            String method = "";
+            if (!queryScanner.hasNext())
+            {
+                throw new SampleCleanSyntaxException("SampleClean: Specify a method (parametric, nonparametric)");
+            }
+            method = queryScanner.next();
+
+            if(method.toLowerCase().equals("nonparametric"))
+            {
+                method = OutlierDetectRewriter.MAD;
+            }
+            else if(method.toLowerCase().equals("parametric"))
+            {
+                method = OutlierDetectRewriter.NORM;
+            }
+            else
+            {
+                throw new SampleCleanSyntaxException("SampleClean: Unknown outlier method!");
+            }
+
+            String alpha = "2.57";
+            if (queryScanner.hasNext())
+                alpha = queryScanner.next();
+
+            commandList.add(ow.scoreQuery(initialTokens.get(3)+"_clean",attr,method));
+            commandList.add(ow.threshQuery(initialTokens.get(3) + "_clean", alpha, method));
+            commandList.add(ow.joinAndFilter(initialTokens.get(3) + "_clean"));
             commandList.add(ow.merge(initialTokens.get(3)+"_clean"));
             commandList.addAll(ow.cleanup(initialTokens.get(3)+"_clean"));
         }

@@ -32,6 +32,8 @@ public class SampleCleanRewriter {
     private static final String CLEAN_COMMAND = "clean";
     private static final String CREATE_COMMAND = "create";
     private static final String MERGE_COMMAND = "merge";
+    private static final String COPY_COMMAND = "copy";
+    private static final String OUTLIER_COMMAND = "outlier";
 
     private static final String RAWSC = "rawsc";
     private static final String NORMALIZEDSC = "normalizedsc";
@@ -46,6 +48,8 @@ public class SampleCleanRewriter {
     private static final String HIVEQL_DUP_COL_NAME = "dup";
     private static final String HIVEQL_CLEAN_TABLE_STORAGE = "ROW FORMAT DELIMITED FIELDS TERMINATED BY \',\'";
     private static final String HIVEQL_OVERWRITE_DIRECTORY = "INSERT OVERWRITE DIRECTORY";
+    private static final String HIVEQL_OVERWRITE_TABLE = "INSERT OVERWRITE TABLE";
+    private static final String HIVEQL_COPY_TABLE = "SELECT * FROM";
 
     //class variables
     private String defaultOutFile = "";
@@ -82,6 +86,10 @@ public class SampleCleanRewriter {
             return dirtyViewRewrite(command);
         else if (command.toLowerCase().startsWith(MERGE_COMMAND))
             return mergeViewRewrite(command);
+        else if (command.toLowerCase().startsWith(COPY_COMMAND))
+            return copyViewRewrite(command);
+        else if (command.toLowerCase().startsWith(OUTLIER_COMMAND))
+            return outlierViewRewrite(command);
         else if (scMode.equalsIgnoreCase(RAWSC))
             return queryRewrite(command);
         else if (scMode.equalsIgnoreCase(NORMALIZEDSC))
@@ -105,6 +113,56 @@ public class SampleCleanRewriter {
                 initialTokens.get(3)))
         {
             commandList.add(result+initialTokens.get(3)+"_clean");
+        }
+
+        return commandList;
+
+    }
+
+    private ArrayList<String> copyViewRewrite(String command) throws SampleCleanSyntaxException
+    {
+        Scanner queryScanner = new Scanner(command);
+        ArrayList<String> initialTokens = tokenizeQuery(queryScanner);
+
+        ArrayList<String> commandList = new ArrayList<String>();
+
+        String result = HIVEQL_OVERWRITE_TABLE + " ";
+
+        if (isValidCopyQuery(initialTokens.get(0),
+                initialTokens.get(1),
+                initialTokens.get(2),
+                initialTokens.get(3)))
+        {
+            commandList.add(result+initialTokens.get(3)+"_clean " + HIVEQL_COPY_TABLE +" " +  initialTokens.get(3)+"_dirty" );
+        }
+
+        return commandList;
+
+    }
+
+    private ArrayList<String> outlierViewRewrite(String command) throws SampleCleanSyntaxException
+    {
+        Scanner queryScanner = new Scanner(command);
+        ArrayList<String> initialTokens = tokenizeQuery(queryScanner);
+        OutlierDetectRewriter ow = new OutlierDetectRewriter();
+
+        ArrayList<String> commandList = new ArrayList<String>();
+
+        String result = "";
+
+        if (isValidOutlierQuery(initialTokens.get(0),
+                initialTokens.get(1),
+                initialTokens.get(2),
+                initialTokens.get(3)))
+        {
+            if (!queryScanner.hasNext())
+                throw new SampleCleanSyntaxException("SampleClean: Specify an attribute with outlier");
+
+            commandList.add(ow.scoreQuery(initialTokens.get(3)+"_clean",queryScanner.next(),OutlierDetectRewriter.MAD));
+            commandList.add(ow.threshQuery(initialTokens.get(3)+"_clean","2.5",OutlierDetectRewriter.MAD));
+            commandList.add(ow.joinAndFilter(initialTokens.get(3)+"_clean"));
+            commandList.add(ow.merge(initialTokens.get(3)+"_clean"));
+            commandList.addAll(ow.cleanup(initialTokens.get(3)+"_clean"));
         }
 
         return commandList;
@@ -284,6 +342,26 @@ public class SampleCleanRewriter {
                 type.equals(CLEAN_COMMAND) &&
                 action.equals("view") &&
                (viewName.length() != 0 || !viewName.toLowerCase().equals("as")));
+    }
+
+    /* Tests whether the copy query is prefaced with the right syntax
+     */
+    private boolean isValidCopyQuery(String preface, String type, String action, String viewName) throws SampleCleanSyntaxException
+    {
+        return (preface.equals(COPY_COMMAND) &&
+                type.equals(CLEAN_COMMAND) &&
+                action.equals("view") &&
+                (viewName.length() != 0 || !viewName.toLowerCase().equals("as")));
+    }
+
+    /* Tests whether the outlier query is prefaced with the right syntax
+ */
+    private boolean isValidOutlierQuery(String preface, String type, String action, String viewName) throws SampleCleanSyntaxException
+    {
+        return (preface.equals(OUTLIER_COMMAND) &&
+                type.equals(CLEAN_COMMAND) &&
+                action.equals("view") &&
+                (viewName.length() != 0 || !viewName.toLowerCase().equals("as")));
     }
 
     /* Tests whether the create query is prefaced with the right syntax

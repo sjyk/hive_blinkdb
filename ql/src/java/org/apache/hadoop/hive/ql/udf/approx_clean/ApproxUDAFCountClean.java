@@ -403,7 +403,7 @@ public class ApproxUDAFCountClean extends AbstractGenericUDAFResolver {
             // init input
             if (mode == Mode.PARTIAL1 || mode == Mode.COMPLETE) {
                 inputOI = (PrimitiveObjectInspector) parameters[0];
-                dupOI = (PrimitiveObjectInspector) parameters[0];
+                dupOI = (PrimitiveObjectInspector) parameters[1];
             } else {
                 soi = (StructObjectInspector) parameters[0];
 

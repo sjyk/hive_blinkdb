@@ -42,6 +42,12 @@ public class SampleCleanSQLExtensionParser{
 	private static final int BCAGG_QUERY = 5;
 	private static final String BCAGG_QUERY_KEYWORD = "selectnsc";
 
+	private static final int REMOVE_QUERY = 6;
+	private static final String REMOVE_QUERY_KEYWORD = "scfilter";
+
+	private static final int SELECT_QUERY = 7;
+	private static final String SELECT_QUERY_KEYWORD = "scshow";
+
 	//private static final int FORK_QUERY = 6;
 	//private static final String FORK_QUERY_KEYWORD = "fork";
 
@@ -76,13 +82,13 @@ public class SampleCleanSQLExtensionParser{
 	{
 		Scanner queryScanner = new Scanner(scQuery);
 		String firstToken = queryScanner.next();
-		//try{
+		try{
 			return exec(classifyQuery(firstToken), queryScanner);
-		//}
-		//catch(Exception e)
-		//{
-		//	return null;
-		//}
+		}
+		catch(Exception e)
+		{
+			return null;
+		}
 	}
 
 	public int classifyQuery(String firstToken)
@@ -100,6 +106,10 @@ public class SampleCleanSQLExtensionParser{
 			return TEXT_FORMAT_QUERY;
 		else if (firstToken.equals(BCAGG_QUERY_KEYWORD))
 			return BCAGG_QUERY;
+		else if (firstToken.equals(REMOVE_QUERY_KEYWORD))
+			return REMOVE_QUERY;
+		else if (firstToken.equals(SELECT_QUERY_KEYWORD))
+			return SELECT_QUERY;
 		else 
 			return -1;	
 	}
@@ -116,6 +126,8 @@ public class SampleCleanSQLExtensionParser{
 			case OUTLIER_QUERY: return execOutlierQuery(viewName, parseOutlierQuery(new Scanner(materializedScanner)));
 			case TEXT_FORMAT_QUERY: return execTextQuery(viewName, parseTextQuery(new Scanner(materializedScanner)));
 			case BCAGG_QUERY: return execNormalizedSC(viewName + " " + materializedScanner);
+			case REMOVE_QUERY: return execRemove(viewName, materializedScanner);
+			case SELECT_QUERY: return execSelect(viewName, materializedScanner);
 			default: return null;
 		}
 	}
@@ -126,6 +138,26 @@ public class SampleCleanSQLExtensionParser{
 		while (queryScannerRemainingTokens.hasNext())
 			tmp += queryScannerRemainingTokens.next() + " ";
 		return tmp;
+	}
+
+	public ArrayList<String> execRemove(String viewName, String predicate)
+	{
+		viewName = viewName + "_clean";
+		String query_template = "INSERT OVERWRITE TABLE %v SELECT * FROM %v WHERE " + predicate;
+		ArrayList<String> commandList = new ArrayList<String>();
+		commandList.add(query_template.replace("%v", viewName));
+		return commandList;
+	}
+
+	public ArrayList<String> execSelect(String viewName, String predicate)
+	{
+		viewName = viewName + "_clean";
+		String query_template = "SELECT * FROM %v ";
+		if (predicate.length() > 0)
+			query_template += " WHERE " + predicate;
+		ArrayList<String> commandList = new ArrayList<String>();
+		commandList.add(query_template.replace("%v", viewName));
+		return commandList;
 	}
 
 	public ArrayList<String> execRawSC(String queryText)

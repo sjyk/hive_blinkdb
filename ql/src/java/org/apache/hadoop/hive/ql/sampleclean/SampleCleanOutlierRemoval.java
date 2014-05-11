@@ -19,7 +19,7 @@ public class SampleCleanOutlierRemoval {
 
     private static final String FILTER_QUERY = "SELECT t.hash from (SELECT * FROM %v_score JOIN %v_threshold ON TRUE) t WHERE t.z <= t.thresh";
     private static final String MERGE_BACK = "INSERT OVERWRITE TABLE %v SELECT * FROM %v LEFT SEMI JOIN %v_inliers on (%v.hash = %v_inliers.hash)";
-    private static final String RULE_QUERY = "INSERT OVERWRITE TABLE %v SELECT * FROM %v WHERE ";
+    //private static final String RULE_QUERY = "INSERT OVERWRITE TABLE %v SELECT * FROM %v WHERE ";
 
     public String scoreQuery(String view, String attribute, String method)
     {
@@ -59,10 +59,10 @@ public class SampleCleanOutlierRemoval {
         return MERGE_BACK.replaceAll("%v",view);
     }
 
-    public String ruleQuery(String view, String rule)
-    {
-        return RULE_QUERY.replaceAll("%v",view) + " " + rule;
-    }
+    //public String ruleQuery(String view, String rule)
+    //{
+    //    return RULE_QUERY.replaceAll("%v",view) + " " + rule;
+    //}
 
     public ArrayList<String> cleanup(String view)
     {

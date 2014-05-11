@@ -16,21 +16,21 @@ public class SampleCleanTextTransformations {
     {
         String query = UPDATE_QUERY + " " + BASE_QUERY;
         String schema = SampleCleanHiveTableOps.schemaToString(schemaList);
-        return query.replace("%s"," hash , dup , "+schema).replace("%v",view+"_clean").replace(" "+attribute+" ",NUMBER_FORMAT).replace("%a",attribute);
+        return query.replace("%s",schema).replace("%v",view+"_clean").replace(" "+attribute+" ",NUMBER_FORMAT).replace("%a",attribute);
     }
 
     public String trimQuery(String view, ArrayList<String> schemaList, String attribute)
     {
     	String query = UPDATE_QUERY + " " + BASE_QUERY;
     	String schema = SampleCleanHiveTableOps.schemaToString(schemaList);
-        return query.replace("%s"," hash , dup , "+schema).replace("%v",view+"_clean").replace(" "+attribute+" ",TRIM_QUERY).replace("%a",attribute);
+        return query.replace("%s",schema).replace("%v",view+"_clean").replace(" "+attribute+" ",TRIM_QUERY).replace("%a",attribute);
     }
 
     public String replaceQuery(String view, ArrayList<String> schemaList, String attribute, String in, String out)
     {
     	String query = UPDATE_QUERY + " " + BASE_QUERY;
     	String schema = SampleCleanHiveTableOps.schemaToString(schemaList);
-        String paramQuery = query.replace("%s"," hash , dup , "+schema).replace("%v",view+"_clean").replace(" "+attribute+" ",REPLACE_QUERY).replace("%a",attribute);
+        String paramQuery = query.replace("%s",schema).replace("%v",view+"_clean").replace(" "+attribute+" ",REPLACE_QUERY).replace("%a",attribute);
         return paramQuery.replace("%rarg1",in).replace("%rarg2",out);
     }
 

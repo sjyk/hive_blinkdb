@@ -46,7 +46,7 @@ public class SampleCleanQueryBuilder {
 	public String rawSCQuery(String sampleName, String aggFunc, String attribute, String predicate, String groupBy, ArrayList<String> schema, long sampleSize, long datasetSize)
 	{
 		if (aggFunc.equalsIgnoreCase("COUNT") || aggFunc.equalsIgnoreCase("SUM") )
-			return "SELECT approx_" + aggFunc + "_clean("+attribute+" , "+sampleSize +" , "+datasetSize+", dup) FROM " + sampleName + "_clean "+ tableOperator.wherePredicate(predicate) + tableOperator.groupBy(groupBy);
+			return "SELECT approx_" + aggFunc + "_clean("+attribute+ " , dup ,"+sampleSize +" , "+datasetSize+" ) FROM " + sampleName + "_clean "+ tableOperator.wherePredicate(predicate) + tableOperator.groupBy(groupBy);
 		else
 			return "SELECT approx_" + aggFunc + "_clean("+attribute+" , dup) FROM " + sampleName + "_clean "+ tableOperator.wherePredicate(predicate) + tableOperator.groupBy(groupBy);
 	}
@@ -54,7 +54,7 @@ public class SampleCleanQueryBuilder {
 	public String normalizedSCQuery(String sampleName, String aggFunc, String attribute, String predicate, String groupBy, ArrayList<String> schema, long sampleSize, long datasetSize)
 	{
 		if (aggFunc.equalsIgnoreCase("COUNT") || aggFunc.equalsIgnoreCase("SUM") )
-			return "SELECT approx_" + aggFunc + "_clean("+tableOperator.attrDifference(sampleName+"_dirty ",sampleName+"_clean ",attribute)+" , "+sampleSize +" , "+datasetSize+" , dup) " + tableOperator.rightOuterEquiJoin(sampleName+"_dirty",sampleName+"_clean","hash") + tableOperator.wherePredicate(predicate,sampleName + "_clean",schema) + tableOperator.groupBy(groupBy,sampleName + "_clean",schema);
+			return "SELECT approx_" + aggFunc + "_clean("+tableOperator.attrDifference(sampleName+"_dirty ",sampleName+"_clean ",attribute)+" , dup ,"+sampleSize +" , "+datasetSize+") " + tableOperator.rightOuterEquiJoin(sampleName+"_dirty",sampleName+"_clean","hash") + tableOperator.wherePredicate(predicate,sampleName + "_clean",schema) + tableOperator.groupBy(groupBy,sampleName + "_clean",schema);
 		else
 			return "SELECT approx_" + aggFunc + "_clean("+tableOperator.attrDifference(sampleName+"_dirty ",sampleName+"_clean ",attribute)+" , dup) " + tableOperator.rightOuterEquiJoin(sampleName+"_dirty",sampleName+"_clean","hash") + tableOperator.wherePredicate(predicate,sampleName + "_clean",schema) + tableOperator.groupBy(groupBy,sampleName + "_clean",schema);
 	}

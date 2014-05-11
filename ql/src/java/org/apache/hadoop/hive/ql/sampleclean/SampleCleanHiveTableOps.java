@@ -138,7 +138,7 @@ public class SampleCleanHiveTableOps {
 
     public String withSampling(double samplingProb)
     {
-        return " WITHSAMPLING " + samplingProb;
+        return " SAMPLEWITH " + samplingProb;
     }
 
     public String predicateFilter(String src, String dest, String predicate)

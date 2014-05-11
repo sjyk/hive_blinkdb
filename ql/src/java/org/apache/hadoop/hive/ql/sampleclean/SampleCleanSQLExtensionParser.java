@@ -3,17 +3,26 @@ package org.apache.hadoop.hive.ql.sampleclean;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.List;
 import java.util.Arrays;
+
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
 
 public class SampleCleanSQLExtensionParser{
 
-	private HashMap<String,ArrayList<String>> schemaManager;
+	private static HashMap<String,ArrayList<String>> schemaManager;
+
 	private SampleCleanQueryBuilder scQueryBuilder;
 	private SampleCleanOutlierRemoval outlierRemoval;
 	private SampleCleanTextTransformations textTransform;
 
-	private long datasetSize = 0;
-	private long sampleSize = 0;
+	private HiveConf conf;
+
+	public long datasetSize = 0;
+	public long sampleSize = 0;
 
 	private static final int INIT_QUERY = 0;
 	private static final String INIT_QUERY_KEYWORD = "scinitialize";
@@ -58,17 +67,22 @@ public class SampleCleanSQLExtensionParser{
 		this.sampleSize = sampleSize;
 	}
 
+	public void setHiveConf(HiveConf conf)
+	{
+		this.conf = conf;
+	}
+
 	public ArrayList<String> parse(String scQuery)
 	{
 		Scanner queryScanner = new Scanner(scQuery);
 		String firstToken = queryScanner.next();
-		try{
+		//try{
 			return exec(classifyQuery(firstToken), queryScanner);
-		}
-		catch(Exception e)
-		{
-			return null;
-		}
+		//}
+		//catch(Exception e)
+		//{
+		//	return null;
+		//}
 	}
 
 	public int classifyQuery(String firstToken)
@@ -196,7 +210,22 @@ public class SampleCleanSQLExtensionParser{
 	public ArrayList<String> execTextQuery(String viewName, ArrayList<String> args)
 	{
 		ArrayList<String> commandList = new ArrayList<String>();
-		commandList.add(textTransform.buildTextFormatQuery(viewName, schemaManager.get(viewName),args));
+
+		try{
+		HiveMetaStoreClient msc = new HiveMetaStoreClient(conf);
+		StorageDescriptor sd = msc.getTable(viewName+"_clean").getSd();
+		List<FieldSchema> fieldSchema = sd.getCols();
+		ArrayList<String> schemaList = new ArrayList<String>();
+
+		for (FieldSchema field: fieldSchema)
+			schemaList.add(field.getName());
+
+        //String tableColString = msc.getTable(viewName+"_clean").toString();
+
+		commandList.add(textTransform.buildTextFormatQuery(viewName, schemaList,args));
+		}
+		catch(Exception metaException){}
+
 		return commandList;
 	}
 

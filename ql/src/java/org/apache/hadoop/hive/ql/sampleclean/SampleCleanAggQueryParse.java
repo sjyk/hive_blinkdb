@@ -30,6 +30,9 @@ public class SampleCleanAggQueryParse
 		if (cut2 == -1)
 		{
 			cut2 = queryString.length();
+			cut2 = queryString.indexOf("group by");
+			if (cut2 == -1)
+				cut2 = queryString.length();
 		}
 		String agg = queryString.substring(cut1+4,cut2);
 		return agg.trim();

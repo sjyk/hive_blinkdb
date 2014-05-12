@@ -119,6 +119,11 @@ public class SampleCleanHiveTableOps {
         return " " + table +"." +attr + " ";
     }
 
+    public String coalescedAccessAttr(String table, String attr)
+    {
+        return " coalesce(" + table +"." +attr + "-0,0) ";
+    }
+
     public String clarifyAllAtributes(String table, ArrayList<String> schema, String queryText)
     {
         queryText = " " + queryText + " ";
@@ -133,7 +138,7 @@ public class SampleCleanHiveTableOps {
 
     public String attrDifference(String table1, String table2, String attr)
     {
-        return accessAttr(table1,attr) + " - " + accessAttr(table2,attr);
+        return coalescedAccessAttr(table1,attr) + " - " + coalescedAccessAttr(table2,attr);
     }
 
     public String withSampling(double samplingProb)

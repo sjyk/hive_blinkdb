@@ -82,13 +82,13 @@ public class SampleCleanSQLExtensionParser{
 	{
 		Scanner queryScanner = new Scanner(scQuery);
 		String firstToken = queryScanner.next();
-		try{
+		//try{
 			return exec(classifyQuery(firstToken), queryScanner);
-		}
-		catch(Exception e)
-		{
-			return null;
-		}
+		//}
+		//catch(Exception e)
+		//{
+		//	return null;
+		//}
 	}
 
 	public int classifyQuery(String firstToken)

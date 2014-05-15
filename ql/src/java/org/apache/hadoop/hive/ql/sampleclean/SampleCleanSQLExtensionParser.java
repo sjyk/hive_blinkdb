@@ -83,7 +83,7 @@ public class SampleCleanSQLExtensionParser{
 
 	public ArrayList<String> parse(String scQuery)
 	{
-		Scanner queryScanner = new Scanner(scQuery);
+		Scanner queryScanner = new Scanner(scQuery.replace("("," ("));
 		String firstToken = queryScanner.next();
 		//try{
 			return exec(classifyQuery(firstToken), queryScanner);

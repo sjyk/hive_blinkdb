@@ -53,7 +53,7 @@ public class SampleCleanHiveTableOps {
     public String createTypedTableWithCSV(String tableName, ArrayList<String> schema, ArrayList<String> types)
     {
         
-        String cmd = createTable(tableName)+"("+ schemaToTypedString(schema,types)+") ROW FORMAT DELIMITED FIELDS TERMINATED BY \',\'";
+        String cmd = createTable(tableName)+"("+ schemaToTypedString(schema,types)+") ROW FORMAT DELIMITED FIELDS TERMINATED BY \'#\'";
         return cmd;
     } 
 

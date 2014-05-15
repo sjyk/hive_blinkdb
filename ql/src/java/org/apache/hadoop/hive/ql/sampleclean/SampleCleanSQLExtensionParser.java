@@ -48,6 +48,9 @@ public class SampleCleanSQLExtensionParser{
 	private static final int SELECT_QUERY = 7;
 	private static final String SELECT_QUERY_KEYWORD = "scshow";
 
+	private static final int COUNT_QUERY = 8;
+	private static final String COUNT_QUERY_KEYWORD = "sccount";
+
 	//private static final int FORK_QUERY = 6;
 	//private static final String FORK_QUERY_KEYWORD = "fork";
 
@@ -110,6 +113,8 @@ public class SampleCleanSQLExtensionParser{
 			return REMOVE_QUERY;
 		else if (firstToken.equals(SELECT_QUERY_KEYWORD))
 			return SELECT_QUERY;
+		else if (firstToken.equals(COUNT_QUERY_KEYWORD))
+			return COUNT_QUERY;
 		else 
 			return -1;	
 	}
@@ -128,6 +133,7 @@ public class SampleCleanSQLExtensionParser{
 			case BCAGG_QUERY: return execNormalizedSC(viewName + " " + materializedScanner);
 			case REMOVE_QUERY: return execRemove(viewName, materializedScanner);
 			case SELECT_QUERY: return execSelect(viewName, materializedScanner);
+			case COUNT_QUERY: return execCount(viewName, materializedScanner);
 			default: return null;
 		}
 	}
@@ -153,6 +159,17 @@ public class SampleCleanSQLExtensionParser{
 	{
 		viewName = viewName + "_clean";
 		String query_template = "SELECT * FROM %v ";
+		if (predicate.length() > 0)
+			query_template += " WHERE " + predicate;
+		ArrayList<String> commandList = new ArrayList<String>();
+		commandList.add(query_template.replace("%v", viewName));
+		return commandList;
+	}
+
+	public ArrayList<String> execCount(String viewName, String predicate)
+	{
+		viewName = viewName + "_clean";
+		String query_template = "SELECT COUNT(1) FROM %v ";
 		if (predicate.length() > 0)
 			query_template += " WHERE " + predicate;
 		ArrayList<String> commandList = new ArrayList<String>();

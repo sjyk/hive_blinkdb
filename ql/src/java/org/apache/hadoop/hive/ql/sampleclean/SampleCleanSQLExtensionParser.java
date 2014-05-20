@@ -189,7 +189,24 @@ public class SampleCleanSQLExtensionParser{
 	{
 		ArrayList<String> commandList = new ArrayList<String>();
 		SampleCleanAggQueryParse scParse = new SampleCleanAggQueryParse(queryText);
-		commandList.add(scQueryBuilder.normalizedSCQuery(scParse.getViewName(), scParse.getAggFunction(), scParse.getAttr(), scParse.getPredicate(), scParse.getGroupBy(),schemaManager.get(scParse.getViewName()), sampleSize, datasetSize));
+		ArrayList<String> schemaList = new ArrayList<String>();
+
+		try{
+		HiveMetaStoreClient msc = new HiveMetaStoreClient(conf);
+		StorageDescriptor sd = msc.getTable(scParse.getViewName()+"_clean").getSd();
+		List<FieldSchema> fieldSchema = sd.getCols();
+		
+
+		for (FieldSchema field: fieldSchema)
+			schemaList.add(field.getName().toLowerCase());
+
+        //String tableColString = msc.getTable(viewName+"_clean").toString();
+
+		//commandList.add(textTransform.buildTextFormatQuery(viewName, schemaList,args));
+		}
+		catch(Exception metaException){}
+
+		commandList.add(scQueryBuilder.normalizedSCQuery(scParse.getViewName(), scParse.getAggFunction(), scParse.getAttr(), scParse.getPredicate(), scParse.getGroupBy(),schemaList, sampleSize, datasetSize));
 		return commandList;
 	}
 

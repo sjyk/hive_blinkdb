@@ -130,7 +130,7 @@ public class SampleCleanHiveTableOps {
 
         for(String attr: schema)
         {
-            queryText = queryText.replace(" "+attr.trim()+" ",accessAttr(table,attr));
+            queryText = queryText.replace(attr.toLowerCase().trim(),accessAttr(table,attr));
         }
 
         return queryText;

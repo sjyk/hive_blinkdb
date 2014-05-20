@@ -124,6 +124,11 @@ public class SampleCleanHiveTableOps {
         return " coalesce(" + table +"." +attr + "-0,0) ";
     }
 
+    /*public String coalescedAccessAttrCount(String table, String attr)
+    {
+        return " coalesce(1," + table +"." +attr + ",0) ";
+    }*/
+
     public String clarifyAllAtributes(String table, ArrayList<String> schema, String queryText)
     {
         queryText = " " + queryText + " ";

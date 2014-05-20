@@ -344,9 +344,8 @@ public class ApproxUDAFCountClean extends AbstractGenericUDAFResolver {
             StringBuilder sb = new StringBuilder();
             sb.append(approx_sum);
             sb.append(" +/- ");
-            sb.append(Math.ceil((1.96 * (1.0 * myagg.totalRows / myagg.sampleRows) * Math
-                    .sqrt(probability
-                            * (((1 - probability) * myagg.totalRows))))));
+            sb.append(Math.ceil((1.96 * (1.0 * myagg.totalRows / Math.sqrt(myagg.sampleRows))) * Math
+            .sqrt(probability * ((myagg.variance) + ((1 - probability) * mean * mean)))));
             sb.append(" (95% Confidence Clean) ");
 
             result.set(sb.toString());
@@ -609,9 +608,8 @@ public class ApproxUDAFCountClean extends AbstractGenericUDAFResolver {
             StringBuilder sb = new StringBuilder();
             sb.append(approx_sum);
             sb.append(" +/- ");
-            sb.append(Math.ceil((1.96 * (1.0 * myagg.totalRows / myagg.sampleRows) * mean * Math
-                    .sqrt(probability
-                            * (((1 - probability) * myagg.totalRows))))));
+            sb.append(Math.ceil((1.96 * (1.0 * myagg.totalRows / Math.sqrt(myagg.sampleRows))) * Math
+            .sqrt(probability * ((myagg.variance) + ((1 - probability) * mean * mean)))));
             sb.append(" (95% Confidence Clean) ");
 
             result.set(sb.toString());
